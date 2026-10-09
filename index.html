@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Gmail Sell</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{--p:#00c853;--bg:#0b0f19;--card:#151a28;--card2:#1c2233;--txt:#fff;--txt2:#a0aec0;--bd:#2d3748;--danger:#ff4757;--warning:#ffa502;--success:#2ed573}
+[data-theme="light"]{--bg:#f5f7fb;--card:#fff;--card2:#f0f2f8;--txt:#1a202c;--txt2:#4a5568;--bd:#e2e8f0}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:system-ui,sans-serif}
+body{background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+#load{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:.4s;gap:14px}
+#load.hide{opacity:0;visibility:hidden}
+.ring{width:60px;height:60px;border:4px solid var(--bd);border-top-color:var(--p);border-radius:50%;animation:s .9s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+
+/* GATE */
+#gate{position:fixed;inset:0;background:var(--bg);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+#gate.show{display:flex}
+.gate-in{width:100%;max-width:420px;background:var(--card);border-radius:20px;padding:22px;border:1px solid var(--bd);text-align:center}
+.gate-in h2{font-size:18px;margin-bottom:6px}
+.gate-in p{font-size:12px;color:var(--txt2);margin-bottom:16px;line-height:1.5}
+.gch{display:flex;align-items:center;gap:10px;background:var(--card2);border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;border:1px solid var(--bd);text-align:left}
+.gch.done{border-color:var(--success);background:rgba(46,213,115,.08)}
+.gch .gc{width:34px;height:34px;border-radius:9px;background:#229ED9;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.gch.done .gc{background:var(--success)}
+.gch .gn{flex:1;font-size:12px;font-weight:600}
+.gch .gs{font-size:10px;color:var(--txt2)}
+.gch.done .gs{color:var(--success)}
+
+#app{display:none;max-width:480px;margin:auto;min-height:100vh;padding-bottom:85px}
+#app.show{display:block}
+.hd{background:linear-gradient(135deg,#00c853,#007a33);padding:16px;border-radius:0 0 24px 24px}
+.hd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.uinfo{display:flex;align-items:center;gap:10px}
+.av{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;border:2px solid rgba(255,255,255,.4)}
+.un{font-size:15px;font-weight:600;color:#fff}
+.uid{font-size:11px;color:rgba(255,255,255,.8)}
+.ico{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.2);border:0;color:#fff;font-size:16px;cursor:pointer}
+.bal{background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border-radius:16px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,.2)}
+.bl{font-size:12px;color:rgba(255,255,255,.9)}
+.bamt{font-size:26px;font-weight:800;color:#fff}
+.bamt span{font-size:14px}
+.main{padding:14px}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:-10px 0 16px}
+.st{background:var(--card);border-radius:12px;padding:10px;text-align:center;border:1px solid var(--bd)}
+.sv{font-size:16px;font-weight:700;color:var(--p)}
+.sl{font-size:10px;color:var(--txt2);margin-top:2px}
+.ttl{font-size:14px;font-weight:600;margin:14px 0 10px;display:flex;align-items:center;gap:6px}
+.ttl:first-child{margin-top:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.ac{background:var(--card);border-radius:14px;padding:16px 12px;text-align:center;border:1px solid var(--bd);cursor:pointer;transition:.15s}
+.ac:active{transform:scale(.96)}
+.ac .i{font-size:28px;margin-bottom:6px}
+.ac .t{font-size:13px;font-weight:600}
+.ac .s{font-size:10px;color:var(--txt2);margin-top:2px}
+.ac.pri{background:linear-gradient(135deg,#00c853,#00a844);border:0;color:#fff}
+.ac.pri .s{color:rgba(255,255,255,.85)}
+.mlist{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.mi{background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;border:1px solid var(--bd);cursor:pointer}
+.mi.sel{border-color:var(--p);box-shadow:0 0 0 2px rgba(0,200,83,.25)}
+.mlg{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff}
+.mlg.bk{background:#e2136e}.mlg.ng{background:#f7941d}.mlg.bn{background:#f0b90b;color:#1a1a1a}
+.mn{font-weight:600;font-size:14px}.md{font-size:11px;color:var(--txt2)}
+.nav{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:var(--card);border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:6px 0 10px;z-index:100}
+.ni{display:flex;flex-direction:column;align-items:center;gap:2px;background:0;border:0;color:var(--txt2);font-size:10px;cursor:pointer;padding:6px 10px;border-radius:10px}
+.ni.act{color:var(--p)}
+.ni .nic{font-size:20px}
+.pg{display:none;animation:f .25s}
+.pg.act{display:block}
+@keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.mo.show{display:flex}
+.md2{background:var(--card);width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px;max-height:85vh;overflow-y:auto;animation:u .3s}
+@keyframes u{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mh{width:40px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto 16px}
+.mt{font-size:17px;font-weight:700;margin-bottom:14px;text-align:center}
+.fg{margin-bottom:12px}
+.fl{font-size:12px;color:var(--txt2);margin-bottom:5px;display:block}
+.fi{width:100%;padding:12px;border-radius:10px;border:1px solid var(--bd);background:var(--card2);color:var(--txt);font-size:14px;outline:0}
+.fi:focus{border-color:var(--p)}
+.fi:disabled{opacity:.8;cursor:not-allowed;background:rgba(0,200,83,.08);color:var(--success);font-weight:600}
+.fi-row{display:flex;gap:6px}
+.fi-row .fi{flex:1}
+.fi-row .rb2{padding:0 12px;border-radius:10px;background:var(--p);color:#fff;border:0;font-size:16px;cursor:pointer;flex-shrink:0}
+.btn{width:100%;padding:13px;border-radius:12px;border:0;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.bp{background:linear-gradient(135deg,#00c853,#00a844);color:#fff}
+.bs{background:var(--card2);color:var(--txt);border:1px solid var(--bd)}
+.bd2{background:var(--danger);color:#fff}
+.bsm{padding:7px 12px;font-size:12px;width:auto;border-radius:8px}
+.note{font-size:11px;color:var(--txt2);text-align:center;margin-top:8px}
+.slist{display:flex;flex-direction:column;gap:6px}
+.si{background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--bd);cursor:pointer}
+.si:active{transform:scale(.98)}
+.sl2{display:flex;align-items:center;gap:10px}
+.sic{width:34px;height:34px;border-radius:9px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px}
+.stx .t{font-size:13px;font-weight:600}
+.stx .s{font-size:10px;color:var(--txt2)}
+.tg{width:44px;height:26px;background:var(--bd);border-radius:13px;position:relative;transition:.25s;flex-shrink:0}
+.tg.on{background:var(--p)}
+.tg::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.25s}
+.tg.on::after{transform:translateX(18px)}
+.hi{background:var(--card);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--bd);margin-bottom:6px}
+.hl .t{font-size:13px;font-weight:600}
+.hl .tm{font-size:10px;color:var(--txt2)}
+.hamt{font-weight:700;font-size:14px}
+.hamt.p{color:var(--success)}.hamt.m{color:var(--danger)}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--card);color:var(--txt);padding:11px 18px;border-radius:10px;border:1px solid var(--bd);z-index:10000;font-size:13px;font-weight:500;transition:.35s cubic-bezier(.34,1.56,.64,1);max-width:90%;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{border-left:4px solid var(--success)}
+.toast.error{border-left:4px solid var(--danger)}
+.toast.info{border-left:4px solid var(--p)}
+.rb{background:linear-gradient(135deg,#1a2332,#0f172a);border-radius:14px;padding:16px;border:1px solid var(--bd);margin-bottom:14px;text-align:center}
+.rc{font-size:20px;font-weight:800;letter-spacing:2px;color:var(--p);margin:8px 0;background:var(--card2);padding:10px;border-radius:10px;user-select:all}
+.rs{display:flex;justify-content:space-around;margin-top:12px}
+.rs .v{font-size:16px;font-weight:700}.rs .l{font-size:10px;color:var(--txt2)}
+.empty{text-align:center;padding:24px 16px;color:var(--txt2)}
+.empty .i{font-size:38px;margin-bottom:8px}
+.sc{background:var(--card);border-radius:10px;padding:10px 12px;border:1px solid var(--bd);margin-bottom:6px}
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px}
+.sm{font-size:12px;font-weight:600;word-break:break-all;flex:1}
+.stm{font-size:10px;color:var(--txt2)}
+.bg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.bg.pending{background:rgba(255,165,2,.15);color:var(--warning)}
+.bg.approved{background:rgba(46,213,115,.15);color:var(--success)}
+.bg.rejected{background:rgba(255,71,87,.15);color:var(--danger)}
+.abadge{background:var(--warning);color:#1a1a1a;font-size:9px;padding:2px 6px;border-radius:5px;font-weight:700;margin-left:4px}
+.uic{background:var(--card2);border-radius:10px;padding:10px;margin-bottom:8px;font-size:12px;line-height:1.7}
+.uic b{color:var(--p)}
+.warn{background:rgba(255,165,2,.12);border:1px solid var(--warning);border-radius:10px;padding:8px;font-size:11px;color:var(--warning);margin-bottom:12px;text-align:center}
+.ch-list{display:flex;flex-direction:column;gap:6px}
+.ch{background:var(--card);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;border:1px solid var(--bd);cursor:pointer;text-decoration:none;color:var(--txt)}
+.ch .ci{width:32px;height:32px;border-radius:8px;background:#229ED9;display:flex;align-items:center;justify-content:center;font-size:14px}
+.ch .cn{flex:1;font-size:12px;font-weight:600}
+.ch .cgo{font-size:14px;color:var(--txt2)}
+.live{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:4px;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.info-box{background:rgba(0,200,83,.08);border:1px solid var(--p);border-radius:10px;padding:10px;font-size:11px;color:var(--txt);margin-bottom:12px;line-height:1.6}
+.info-box b{color:var(--p)}
+</style>
+</head>
+<body>
+
+<div id="load"><div class="ring"></div><div style="font-size:12px;color:var(--txt2)">সংযোগ করা হচ্ছে...</div></div>
+<div id="toast" class="toast"></div>
+
+<!-- CHANNEL GATE -->
+<div id="gate">
+  <div class="gate-in">
+    <div style="font-size:38px;margin-bottom:8px">📢</div>
+    <h2>চ্যানেলে জয়েন করুন</h2>
+    <p>অ্যাপে প্রবেশ করতে নিচের ৪টি চ্যানেলে জয়েন করুন।<br>প্রতিটি চ্যানেলে ট্যাপ করে জয়েন করুন।</p>
+    <div id="gateList"></div>
+    <button id="gateBtn" class="btn bp" style="margin-top:14px" disabled>✅ চেক করুন</button>
+    <div style="font-size:10px;color:var(--txt2);margin-top:8px">সবগুলো চ্যানেলে জয়েন করার পর বাটন চালু হবে</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="hd">
+    <div class="hd-top">
+      <div class="uinfo">
+        <div class="av" id="av">U</div>
+        <div>
+          <div class="un" id="un">Loading...</div>
+          <div class="uid" id="uid"><span class="live"></span>ID: ---</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="ico" onclick="go('settings')">⚙️</button>
+        <button class="ico" onclick="go('channels')">📢</button>
+      </div>
+    </div>
+    <div class="bal">
+      <div>
+        <div class="bl">আপনার ব্যালেন্স</div>
+        <div class="bamt" id="bamt">০ <span>৳</span></div>
+      </div>
+      <button class="ico" onclick="toast('রিয়েল-টাইমে আপডেট হচ্ছে','info')">🔄</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="pg act" id="p-home">
+      <div class="stats">
+        <div class="st"><div class="sv" id="sg">0</div><div class="sl">বিক্রি Gmail</div></div>
+        <div class="st"><div class="sv" id="sr">0</div><div class="sl">রেফারেল</div></div>
+        <div class="st"><div class="sv" id="se">০</div><div class="sl">মোট আয়</div></div>
+      </div>
+
+      <div class="ttl">⚡ দ্রুত অ্যাকশন</div>
+      <div class="grid">
+        <div class="ac pri" onclick="openSell()"><div class="i">📧</div><div class="t">Gmail জমা</div><div class="s">৬ ৳ প্রতিটি</div></div>
+        <div class="ac" onclick="go('withdraw')"><div class="i">💸</div><div class="t">উইথড্র</div><div class="s">মিন ১০ ৳</div></div>
+        <div class="ac" onclick="go('referral')"><div class="i">👥</div><div class="t">রেফারেল</div><div class="s">৩ ৳ প্রতিজন</div></div>
+        <div class="ac" onclick="go('history')"><div class="i">📜</div><div class="t">হিস্ট্রি</div><div class="s">সব লেনদেন</div></div>
+      </div>
+
+      <div class="ttl">📤 আপনার সাবমিশন</div>
+      <div id="mySubs"><div class="empty"><div class="i">📭</div><div style="font-size:11px">কোনো সাবমিশন নেই</div></div></div>
+
+      <div class="ttl">📢 নোটিশ</div>
+      <div style="background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--bd);font-size:12px;color:var(--txt2);line-height:1.6">
+        • প্রতি Gmail অ্যাপ্রুভ = <b style="color:var(--p)">৬ ৳</b><br>
+        • প্রতি রেফারেলে পাবেন <b style="color:var(--p)">৩ ৳</b><br>
+        • Gmail অবশ্যই <b>Fresh</b> ও <b>2000-2008</b> সালের হতে হবে<br>
+        • <b style="color:var(--warning)">নাম্বার দিয়ে ভেরিফাই করা যাবে না</b><br>
+        • পাসওয়ার্ড অটো: <b>@natasonewking00</b><br>
+        • সর্বোচ্চ <b>৪টি</b> পেন্ডিং (তারপর অপেক্ষা করুন)
+      </div>
+    </div>
+
+    <div class="pg" id="p-withdraw">
+      <div class="ttl">💳 উইথড্র মেথড</div>
+      <div class="mlist">
+        <div class="mi" onclick="selM(this,'bkash')"><div class="mlg bk">bK</div><div style="flex:1"><div class="mn">bKash</div><div class="md">পার্সোনাল</div></div><div>›</div></div>
+        <div class="mi" onclick="selM(this,'nagad')"><div class="mlg ng">Ng</div><div style="flex:1"><div class="mn">Nagad</div><div class="md">পার্সোনাল</div></div><div>›</div></div>
+        <div class="mi" onclick="selM(this,'binance')"><div class="mlg bn">Bn</div><div style="flex:1"><div class="mn">Binance</div><div class="md">USDT TRC20</div></div><div>›</div></div>
+      </div>
+      <div class="fg"><label class="fl">অ্যামাউন্ট (৳)</label><input type="number" class="fi" id="wa" placeholder="মিনিমাম ১০" min="10"></div>
+      <div class="fg"><label class="fl" id="wnl">নাম্বার / Wallet</label><input type="text" class="fi" id="wn" placeholder="লিখুন"></div>
+      <button class="btn bp" onclick="submitWD()">💸 উইথড্র রিকোয়েস্ট</button>
+      <div class="note">প্রতি উইথড্রে ৫ ৳ চার্জ</div>
+    </div>
+
+    <div class="pg" id="p-referral">
+      <div class="rb">
+        <div style="font-size:12px;color:var(--txt2)">আপনার রেফারেল কোড</div>
+        <div class="rc" id="rc">------</div>
+        <button class="btn bp" onclick="copyRef()">📋 কপি করুন</button>
+        <div class="rs">
+          <div><div class="v" id="rc2">0</div><div class="l">মোট রেফার</div></div>
+          <div><div class="v" id="re">০ ৳</div><div class="l">রেফার আয়</div></div>
+        </div>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--bd);font-size:12px;color:var(--txt2);line-height:1.6">
+        🔗 প্রতি সফল রেফারেলে পাবেন <b style="color:var(--p)">৩ ৳</b>
+      </div>
+    </div>
+
+    <div class="pg" id="p-history">
+      <div class="ttl">📜 লেনদেন</div>
+      <div id="hist"><div class="empty"><div class="i">📭</div><div>কোনো লেনদেন নেই</div></div></div>
+    </div>
+
+    <div class="pg" id="p-channels">
+      <div class="ttl">📢 আমাদের চ্যানেল</div>
+      <div class="ch-list" id="chList"></div>
+      <div style="margin-top:14px;background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--bd);font-size:12px;color:var(--txt2);line-height:1.6">
+        💡 সব চ্যানেলে জয়েন করুন। আপডেট ও নোটিশ পাবেন সবার আগে।
+      </div>
+    </div>
+
+    <div class="pg" id="p-settings">
+      <div class="ttl">⚙️ সেটিংস</div>
+      <div class="slist">
+        <div class="si" onclick="theme()"><div class="sl2"><div class="sic">🌙</div><div class="stx"><div class="t">নাইট মোড</div><div class="s">ডার্ক / লাইট</div></div></div><div class="tg on" id="tgt"></div></div>
+        <div class="si" onclick="vib()"><div class="sl2"><div class="sic">📳</div><div class="stx"><div class="t">ভাইব্রেশন</div><div class="s">ক্লিকে হালকা কম্পন</div></div></div><div class="tg on" id="vbt"></div></div>
+        <div class="si" onclick="reqNotif()"><div class="sl2"><div class="sic">🔔</div><div class="stx"><div class="t">নোটিফিকেশন চালু</div><div class="s">অ্যাপের বাইরেও অ্যালার্ট</div></div></div><div class="tg" id="ntgt"></div></div>
+        <div class="si" id="adminMenu" style="display:none" onclick="go('admin')"><div class="sl2"><div class="sic" style="background:rgba(255,165,2,.2)">🛡️</div><div class="stx"><div class="t">অ্যাডমিন প্যানেল <span class="abadge">ADMIN</span></div><div class="s">Approve / Balance</div></div></div><div>›</div></div>
+        <div class="si" onclick="support()"><div class="sl2"><div class="sic">💬</div><div class="stx"><div class="t">হেল্প / সাপোর্ট</div><div class="s">@Tastewallet</div></div></div><div>›</div></div>
+        <div class="si" onclick="go('channels')"><div class="sl2"><div class="sic">📢</div><div class="stx"><div class="t">আমাদের চ্যানেল</div><div class="s">Join করুন</div></div></div><div>›</div></div>
+        <div class="si" onclick="if(confirm('সব লোকাল ডাটা মুছে যাবে?')){localStorage.clear();location.reload()}"><div class="sl2"><div class="sic">🗑️</div><div class="stx"><div class="t">লোকাল ডাটা ক্লিয়ার</div><div class="s">সতর্কভাবে</div></div></div><div style="color:var(--danger);font-size:12px">Clear</div></div>
+      </div>
+      <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--txt2)">Gmail Sell v5.0 · Firebase</div>
+    </div>
+
+    <div class="pg" id="p-admin">
+      <div class="ttl">🛡️ অ্যাডমিন <span class="abadge">ADMIN</span></div>
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="btn bs bsm" style="flex:1" onclick="aF('pending')">পেন্ডিং</button>
+        <button class="btn bs bsm" style="flex:1" onclick="aF('approved')">অ্যাপ্রুভড</button>
+        <button class="btn bs bsm" style="flex:1" onclick="aF('rejected')">রিজেক্টেড</button>
+      </div>
+      <div id="aList"></div>
+
+      <div class="ttl" style="margin-top:18px">👤 ইউজার ম্যানেজমেন্ট</div>
+      <div class="fg"><input type="text" class="fi" id="aUid" placeholder="User UID (নাম্বার)" inputmode="numeric"></div>
+      <button class="btn bs" onclick="aSearch()">🔍 সার্চ</button>
+
+      <div id="aInfo" style="margin-top:10px"></div>
+      <div id="aCtrl" style="display:none;margin-top:10px">
+        <div class="fg"><input type="number" class="fi" id="aAmt" placeholder="Amount ৳" min="1"></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn bp" style="flex:1" onclick="aAdj(1)">➕ যোগ</button>
+          <button class="btn bd2" style="flex:1" onclick="aAdj(-1)">➖ কমান</button>
+        </div>
+        <button class="btn bs" style="margin-top:6px" id="aBlockBtn" onclick="aBlock()">🚫 ব্লক</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="ni act" data-p="home" onclick="go('home')"><span class="nic">🏠</span>হোম</button>
+    <button class="ni" data-p="withdraw" onclick="go('withdraw')"><span class="nic">💸</span>উইথড্র</button>
+    <button class="ni" data-p="referral" onclick="go('referral')"><span class="nic">👥</span>রেফার</button>
+    <button class="ni" data-p="history" onclick="go('history')"><span class="nic">📜</span>হিস্ট্রি</button>
+    <button class="ni" data-p="settings" onclick="go('settings')"><span class="nic">⚙️</span>সেটিংস</button>
+  </div>
+</div>
+
+<!-- SELL MODAL -->
+<div class="mo" id="mSell">
+  <div class="md2">
+    <div class="mh"></div>
+    <div class="mt">📧 Gmail জমা দিন</div>
+    <div class="info-box">
+      ✅ <b>Fresh Gmail</b> দিতে হবে (২০০০ - ২০০৮ সালের)<br>
+      ❌ <b style="color:var(--danger)">নাম্বার দিয়ে ভেরিফাই করা যাবে না</b><br>
+      🔑 পাসওয়ার্ড অটো-সেট: <b>@natasonewking00</b>
+    </div>
+    <div class="fg"><label class="fl">আপনার নাম (Auto)</label><input type="text" class="fi" id="sN" disabled></div>
+    <div class="fg"><label class="fl">Gmail Year (২০০০-২০০৮)</label>
+      <select class="fi" id="sY">
+        <option value="">-- সালের নির্বাচন --</option>
+        <option>2000</option><option>2001</option><option>2002</option><option>2003</option>
+        <option>2004</option><option>2005</option><option>2006</option><option>2007</option>
+        <option>2008</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Gmail Address</label>
+      <div class="fi-row">
+        <input type="email" class="fi" id="sG" placeholder="example@gmail.com" autocomplete="off">
+        <button class="rb2" onclick="genGmail()" title="র‍্যান্ডম জেনারেট">🎲</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Password (Auto)</label><input type="text" class="fi" id="sP" disabled></div>
+    <div style="font-size:11px;color:var(--txt2);text-align:center;margin-bottom:10px">পেন্ডিং: <b id="sPC" style="color:var(--warning)">0</b> / 4</div>
+    <button class="btn bp" onclick="submitSell()" id="sBtn">📤 সাবমিট</button>
+    <button class="btn bs" style="margin-top:6px" onclick="closeM('mSell')">বাতিল</button>
+  </div>
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+const CFG = {
+  gmailPrice: 6, refBonus: 3, minWD: 10, wdCharge: 5,
+  password: "@natasonewking00",
+  maxPending: 4,
+  support: "Tastewallet",
+  botLink: "https://t.me/Tastewallet",
+  adminUids: ["7122586787"],
+  validYears: [2000,2001,2002,2003,2004,2005,2006,2007,2008],
+  channels: [
+    { name: "Taste Wallet Official", url: "https://t.me/tasr_wallet_chenel" },
+    { name: "TruePlay Channel 1", url: "https://t.me/trueplaychannel1" },
+    { name: "TruePlay Channel 2", url: "https://t.me/trueplaychannel2" },
+    { name: "TruePlay Channel 3", url: "https://t.me/trueplaychannel3" }
+  ],
+  // Optional: Telegram push notification webhook (Cloud Function URL)
+  // নিচে দেওয়া Cloud Function deploy করলে এখানে URL বসান
+  notifyWebhook: ""
+};
+
+/* ============ FIREBASE ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyCVbHudf5vqaibVcJrO-IsXOXJ3gyKn7Oo",
+  authDomain: "fir-5fa8e.firebaseapp.com",
+  projectId: "fir-5fa8e",
+  storageBucket: "fir-5fa8e.firebasestorage.app",
+  messagingSenderId: "654580045758",
+  appId: "1:654580045758:web:f272d157ae8d717bf50bef",
+  measurementId: "G-MWVNJRL6ZF"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FV = firebase.firestore.FieldValue;
+
+/* ============ TELEGRAM ============ */
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor("#00c853"); }
+
+/* ============ STATE ============ */
+let U = { id:null, name:"Guest", balance:0, gmailSold:0, referrals:0, totalEarn:0, history:[], blocked:false, refCode:"" };
+let selM2 = null, vibOn = true, isAdmin = false, aFilter = "pending", aUid = null;
+let unsubUser = null, prevStatus = {};
+let devId = localStorage.getItem("dev") || (() => { const i = "d" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("dev", i); return i })();
+
+/* ============ HELPERS ============ */
+const $ = id => document.getElementById(id);
+const fm = n => Number(n || 0).toLocaleString("bn-BD", { maximumFractionDigits: 2 });
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const stBn = s => ({ pending:"পেন্ডিং", approved:"অ্যাপ্রুভড", rejected:"রিজেক্টেড" }[s] || s);
+const tsMs = t => t?.toMillis ? t.toMillis() : (typeof t === "number" ? t : Date.now());
+const fmtTime = t => new Date(tsMs(t)).toLocaleString("bn-BD");
+
+function toast(m, t = "info") {
+  const el = $("toast"); el.textContent = m; el.className = "toast " + t + " show";
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 2500);
+}
+function vv() { if (vibOn && navigator.vibrate) navigator.vibrate(10); }
+
+/* ============ NOTIFICATIONS ============ */
+function reqNotif() {
+  vv();
+  if (!("Notification" in window)) return toast("এই ব্রাউজারে নোটিফিকেশন নেই", "error");
+  Notification.requestPermission().then(p => {
+    if (p === "granted") { $("ntgt").classList.add("on"); toast("✅ নোটিফিকেশন চালু", "success"); }
+    else toast("❌ অনুমতি দেওয়া হয়নি", "error");
+  });
+}
+
+function pushNotif(title, body) {
+  // Local browser notification (app outside হলেও দেখাবে)
+  if ("Notification" in window && Notification.permission === "granted") {
+    try { new Notification(title, { body, badge: "📧", tag: Date.now().toString() }); } catch {}
+  }
+  // Telegram push via webhook (Cloud Function)
+  if (CFG.notifyWebhook && U.id) {
+    fetch(CFG.notifyWebhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid: U.id, title, body })
+    }).catch(() => {});
+  }
+}
+
+/* ============ INIT ============ */
+window.addEventListener("DOMContentLoaded", async () => {
+  if (tg?.initDataUnsafe?.user) {
+    const t = tg.initDataUnsafe.user;
+    U.id = String(t.id);
+    U.name = (t.first_name || "") + (t.last_name ? " " + t.last_name : "");
+  } else {
+    let d = localStorage.getItem("demoUid");
+    if (!d) { d = String(Math.floor(1e8 + Math.random() * 9e8)); localStorage.setItem("demoUid", d); }
+    U.id = d; U.name = "Demo User";
+  }
+  U.refCode = "GS" + U.id.slice(-6);
+  isAdmin = CFG.adminUids.includes(U.id);
+  if (isAdmin) $("adminMenu").style.display = "flex";
+
+  const bu = localStorage.getItem("bu");
+  if (bu && bu !== U.id) toast("⚠️ এই ডিভাইসে অন্য অ্যাকাউন্ট বাঁধা!", "error");
+  else { localStorage.setItem("bd", devId); localStorage.setItem("bu", U.id); }
+
+  theme(false);
+  renderChannels();
+  renderGateList();
+
+  // Check channel joined
+  const joined = localStorage.getItem("joined_" + U.id);
+  if (CFG.channels.length && !joined) {
+    $("gate").classList.add("show");
+    $("load").classList.add("hide");
+    return;
+  }
+
+  await startApp();
+});
+
+async function startApp() {
+  try {
+    await ensureUser();
+    startUserListener();
+  } catch (e) {
+    console.error(e);
+    toast("সংযোগে সমস্যা: " + e.message, "error");
+  }
+  $("load").classList.add("hide");
+  $("app").classList.add("show");
+}
+
+/* ============ CHANNEL GATE ============ */
+function renderGateList() {
+  const el = $("gateList");
+  const joined = JSON.parse(localStorage.getItem("joinedCh_" + U.id) || "[]");
+  el.innerHTML = CFG.channels.map((c, i) => {
+    const done = joined.includes(i);
+    return `<div class="gch ${done ? 'done' : ''}" id="gch_${i}" onclick="joinCh(${i})">
+      <div class="gc">${done ? '✓' : '📢'}</div>
+      <div style="flex:1">
+        <div class="gn">${esc(c.name)}</div>
+        <div class="gs">${done ? 'জয়েন করা হয়েছে' : 'ট্যাপ করে জয়েন করুন'}</div>
+      </div>
+      <div style="font-size:14px;color:var(--txt2)">›</div>
+    </div>`;
+  }).join("");
+  checkGate();
+}
+
+function joinCh(i) {
+  vv();
+  const joined = JSON.parse(localStorage.getItem("joinedCh_" + U.id) || "[]");
+  if (!joined.includes(i)) {
+    // Open Telegram link
+    const url = CFG.channels[i].url;
+    if (tg) tg.openTelegramLink(url); else window.open(url, "_blank");
+    // Mark after opening
+    setTimeout(() => {
+      if (!joined.includes(i)) joined.push(i);
+      localStorage.setItem("joinedCh_" + U.id, JSON.stringify(joined));
+      renderGateList();
+    }, 800);
+  }
+}
+
+function checkGate() {
+  const joined = JSON.parse(localStorage.getItem("joinedCh_" + U.id) || "[]");
+  const all = CFG.channels.every((_, i) => joined.includes(i));
+  $("gateBtn").disabled = !all;
+  if (all) $("gateBtn").style.background = "linear-gradient(135deg,#00c853,#00a844)";
+}
+
+$("gateBtn")?.addEventListener("click", async () => {
+  vv();
+  const joined = JSON.parse(localStorage.getItem("joinedCh_" + U.id) || "[]");
+  const all = CFG.channels.every((_, i) => joined.includes(i));
+  if (!all) return toast("সব চ্যানেলে জয়েন করুন", "error");
+  localStorage.setItem("joined_" + U.id, "1");
+  $("gate").classList.remove("show");
+  $("load").classList.remove("hide");
+  await startApp();
+});
+
+/* ============ FIREBASE SYNC ============ */
+async function ensureUser() {
+  const ref = db.collection("users").doc(U.id);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    await ref.set({
+      name: U.name, balance: 0, gmailSold: 0, referrals: 0, totalEarn: 0,
+      history: [], blocked: false, device: devId, createdAt: FV.serverTimestamp()
+    });
+  } else {
+    const d = snap.data();
+    if (!d.name && U.name) await ref.update({ name: U.name });
+  }
+}
+
+function startUserListener() {
+  if (unsubUser) unsubUser();
+  unsubUser = db.collection("users").doc(U.id).onSnapshot(snap => {
+    if (!snap.exists) return;
+    const d = snap.data();
+    const oldBal = U.balance;
+    const oldSold = U.gmailSold;
+    const oldRef = U.referrals;
+
+    U.balance = d.balance || 0;
+    U.gmailSold = d.gmailSold || 0;
+    U.referrals = d.referrals || 0;
+    U.totalEarn = d.totalEarn || 0;
+    U.history = d.history || [];
+    U.blocked = !!d.blocked;
+
+    // Detect changes and notify
+    if (oldBal !== U.balance && oldBal !== 0) {
+      const diff = U.balance - oldBal;
+      pushNotif("💰 ব্যালেন্স আপডেট", diff > 0 ? `+${fm(diff)} ৳ যোগ হয়েছে` : `${fm(diff)} ৳ কাটা হয়েছে`);
+    }
+    if (oldSold !== U.gmailSold && U.gmailSold > oldSold) {
+      pushNotif("✅ Gmail অ্যাপ্রুভড", `আপনি ${CFG.gmailPrice} ৳ পেয়েছেন`);
+    }
+    if (oldRef !== U.referrals && U.referrals > oldRef) {
+      pushNotif("👥 নতুন রেফারেল", `+${CFG.refBonus} ৳ বোনাস পেয়েছেন`);
+    }
+
+    if (d.blocked) {
+      document.body.innerHTML = `<div style="display:flex;height:100vh;align-items:center;justify-content:center;flex-direction:column;background:#0b0f19;color:#ff4757;text-align:center;padding:20px;font-family:system-ui"><div style="font-size:48px">🚫</div><h2>অ্যাকাউন্ট ব্লক করা হয়েছে</h2><p style="color:#a0aec0;margin-top:8px">@${CFG.support} এ যোগাযোগ করুন</p></div>`;
+      return;
+    }
+    updUI();
+    renderMySubs();
+    if (isAdmin && $("p-admin").classList.contains("act")) { renderAdmin(); if (aUid) aSearch(); }
+  });
+}
+
+function updUI() {
+  $("un").textContent = U.name + (isAdmin ? " 👑" : "");
+  $("uid").innerHTML = '<span class="live"></span>ID: ' + U.id;
+  $("av").textContent = (U.name[0] || "U").toUpperCase();
+  $("bamt").innerHTML = fm(U.balance) + ' <span>৳</span>';
+  $("sg").textContent = U.gmailSold;
+  $("sr").textContent = U.referrals;
+  $("se").textContent = fm(U.totalEarn);
+  $("rc").textContent = U.refCode;
+  $("rc2").textContent = U.referrals;
+  $("re").textContent = fm(U.referrals * CFG.refBonus) + " ৳";
+  renderHist();
+}
+
+/* ============ NAV ============ */
+function go(p) {
+  vv();
+  if (p === "admin" && !isAdmin) return toast("অ্যাক্সেস নেই", "error");
+  document.querySelectorAll(".pg").forEach(x => x.classList.remove("act"));
+  $("p-" + p).classList.add("act");
+  document.querySelectorAll(".ni").forEach(x => x.classList.toggle("act", x.dataset.p === p));
+  if (p === "home") renderMySubs();
+  if (p === "admin") renderAdmin();
+}
+
+/* ============ SELL ============ */
+async function openSell() {
+  vv();
+  if (U.blocked) return toast("ব্লকড", "error");
+  try {
+    const snap = await db.collection("submissions")
+      .where("uid", "==", U.id).where("status", "==", "pending").get();
+    if (snap.size >= CFG.maxPending) {
+      return toast(`সর্বোচ্চ ${CFG.maxPending}টি পেন্ডিং আছে। কোনোটা অ্যাপ্রুভ/রিজেক্ট হলে আবার পারবেন।`, "error");
+    }
+    $("sN").value = U.name;
+    $("sG").value = "";
+    $("sY").value = "";
+    $("sP").value = CFG.password;
+    $("sPC").textContent = snap.size;
+    openM("mSell");
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+function genGmail() {
+  vv();
+  const year = $("sY").value;
+  if (!year) return toast("আগে সাল নির্বাচন করুন", "error");
+  const clean = U.name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12) || "user";
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  $("sG").value = `${clean}${rand}${year.slice(-2)}@gmail.com`;
+  toast("🎲 র‍্যান্ডম জেনারেট হয়েছে", "success");
+}
+
+async function submitSell() {
+  vv();
+  const g = $("sG").value.trim().toLowerCase();
+  const year = parseInt($("sY").value);
+
+  // Validation
+  if (!year || !CFG.validYears.includes(year)) {
+    return toast("সাল ২০০০ - ২০০৮ এর মধ্যে হতে হবে", "error");
+  }
+  if (!g || !/^[a-z0-9._-]+@gmail\.com$/i.test(g)) {
+    return toast("সঠিক Gmail অ্যাড্রেস দিন", "error");
+  }
+  if (g.includes("+")) return toast("Gmail এ '+' ব্যবহার করা যাবে না", "error");
+
+  $("sBtn").disabled = true; $("sBtn").textContent = "⏳ সাবমিট হচ্ছে...";
+  try {
+    const pendSnap = await db.collection("submissions")
+      .where("uid", "==", U.id).where("status", "==", "pending").get();
+    if (pendSnap.size >= CFG.maxPending) {
+      $("sBtn").disabled = false; $("sBtn").textContent = "📤 সাবমিট";
+      return toast(`সর্বোচ্চ ${CFG.maxPending}টি পেন্ডিং`, "error");
+    }
+    const dupSnap = await db.collection("submissions").where("gmail", "==", g).limit(1).get();
+    if (!dupSnap.empty) {
+      $("sBtn").disabled = false; $("sBtn").textContent = "📤 সাবমিট";
+      return toast("এই Gmail আগে জমা হয়েছে", "error");
+    }
+
+    await db.collection("submissions").add({
+      uid: U.id, userName: U.name,
+      gmail: g, year: year, password: CFG.password,
+      status: "pending",
+      time: FV.serverTimestamp()
+    });
+
+    closeM("mSell");
+    toast("✅ জমা হয়েছে! অ্যাপ্রুভ হলে ৬ ৳ পাবেন", "success");
+    renderMySubs();
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+  $("sBtn").disabled = false; $("sBtn").textContent = "📤 সাবমিট";
+}
+
+async function renderMySubs() {
+  const el = $("mySubs");
+  try {
+    const snap = await db.collection("submissions").where("uid", "==", U.id).get();
+    const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => tsMs(b.time) - tsMs(a.time)).slice(0, 10);
+    if (!arr.length) return el.innerHTML = `<div class="empty"><div class="i">📭</div><div style="font-size:11px">কোনো সাবমিশন নেই</div></div>`;
+    // Notification on status change
+    arr.forEach(s => {
+      const k = s.id;
+      if (prevStatus[k] && prevStatus[k] !== s.status) {
+        if (s.status === "approved") pushNotif("✅ Gmail অ্যাপ্রুভড", `${s.gmail} - +${CFG.gmailPrice} ৳`);
+        if (s.status === "rejected") pushNotif("❌ Gmail রিজেক্টেড", `${s.gmail} বাতিল হয়েছে`);
+      }
+      prevStatus[k] = s.status;
+    });
+    el.innerHTML = arr.map(s => `
+      <div class="sc">
+        <div class="sh"><div class="sm">${esc(s.gmail)}</div><span class="bg ${s.status}">${stBn(s.status)}</span></div>
+        <div class="stm">📅 ${s.year || "-"} · ${fmtTime(s.time)}</div>
+      </div>`).join("");
+  } catch (e) { console.error(e); }
+}
+
+/* ============ WITHDRAW ============ */
+function selM(el, m) {
+  vv();
+  document.querySelectorAll(".mi").forEach(x => x.classList.remove("sel"));
+  el.classList.add("sel"); selM2 = m;
+  $("wnl").textContent = { bkash:"bKash নাম্বার", nagad:"Nagad নাম্বার", binance:"Binance Wallet (TRC20)" }[m];
+}
+
+async function submitWD() {
+  vv();
+  if (!selM2) return toast("মেথড সিলেক্ট করুন", "error");
+  const amt = parseFloat($("wa").value), num = $("wn").value.trim();
+  if (!amt || amt < CFG.minWD) return toast(`মিন ${CFG.minWD} ৳`, "error");
+  if (!num) return toast("নাম্বার দিন", "error");
+  const tot = amt + CFG.wdCharge;
+  if (U.balance < tot) return toast(`ব্যালেন্স অপর্যাপ্ত (${tot} ৳ লাগবে)`, "error");
+
+  try {
+    const ref = db.collection("users").doc(U.id);
+    await ref.update({
+      balance: FV.increment(-tot),
+      history: FV.arrayUnion(
+        { type: "উইথড্র (" + selM2.toUpperCase() + ")", amount: amt, time: new Date().toLocaleString("bn-BD"), sign: "-" },
+        { type: "সার্ভিস চার্জ", amount: CFG.wdCharge, time: new Date().toLocaleString("bn-BD"), sign: "-" }
+      )
+    });
+    $("wa").value = ""; $("wn").value = "";
+    toast("✅ উইথড্র সাবমিট!", "success");
+    pushNotif("💸 উইথড্র সাবমিট", `${amt} ৳ (${selM2.toUpperCase()}) প্রসেস হচ্ছে`);
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+/* ============ REFERRAL ============ */
+function copyRef() {
+  vv();
+  navigator.clipboard.writeText(`https://t.me/Tastewallet?start=${U.refCode}`)
+    .then(() => toast("লিংক কপি!", "success"))
+    .catch(() => toast("কপি ব্যর্থ", "error"));
+}
+
+/* ============ HISTORY ============ */
+function renderHist() {
+  const el = $("hist");
+  if (!U.history.length) return el.innerHTML = `<div class="empty"><div class="i">📭</div><div>কোনো লেনদেন নেই</div></div>`;
+  el.innerHTML = U.history.slice(0, 50).map(h => `
+    <div class="hi">
+      <div class="hl"><div class="t">${esc(h.type)}</div><div class="tm">${esc(h.time)}</div></div>
+      <div class="hamt ${h.sign === '+' ? 'p' : 'm'}">${h.sign}${fm(h.amount)} ৳</div>
+    </div>`).join("");
+}
+
+/* ============ CHANNELS ============ */
+function renderChannels() {
+  const el = $("chList");
+  el.innerHTML = CFG.channels.map(c => `
+    <a class="ch" href="${c.url}" onclick="openTg(event,'${c.url}')">
+      <div class="ci">📢</div>
+      <div class="cn">${esc(c.name)}</div>
+      <div class="cgo">›</div>
+    </a>`).join("");
+}
+function openTg(e, url) {
+  e.preventDefault(); vv();
+  if (tg) tg.openTelegramLink(url); else window.open(url, "_blank");
+}
+
+/* ============ ADMIN ============ */
+function aF(s) { vv(); aFilter = s; renderAdmin(); }
+
+async function renderAdmin() {
+  if (!isAdmin) return;
+  try {
+    const snap = await db.collection("submissions").where("status", "==", aFilter).get();
+    const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => tsMs(b.time) - tsMs(a.time));
+    const el = $("aList");
+    if (!arr.length) return el.innerHTML = `<div class="empty"><div class="i">📭</div><div style="font-size:12px">কোনো ${stBn(aFilter)} নেই</div></div>`;
+    el.innerHTML = arr.map(s => `
+      <div class="sc">
+        <div class="sh"><div class="sm">${esc(s.gmail)}</div><span class="bg ${s.status}">${stBn(s.status)}</span></div>
+        <div style="font-size:11px;color:var(--txt2);margin:4px 0">
+          📅 সাল: ${s.year || "-"}<br>
+          🔑 ${esc(s.password)}<br>
+          👤 ${esc(s.uid)} (${esc(s.userName || "-")})<br>
+          🕐 ${fmtTime(s.time)}
+        </div>
+        ${s.status === "pending" ? `
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn bp bsm" style="flex:1" onclick="aApprove('${s.id}','${esc(s.uid)}')">✅ অ্যাপ্রুভ</button>
+            <button class="btn bd2 bsm" style="flex:1" onclick="aReject('${s.id}','${esc(s.uid)}')">❌ রিজেক্ট</button>
+          </div>` : ""}
+      </div>`).join("");
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+async function aApprove(subId, uid) {
+  vv();
+  try {
+    const subRef = db.collection("submissions").doc(subId);
+    const subSnap = await subRef.get();
+    if (!subSnap.exists || subSnap.data().status !== "pending") return;
+
+    await subRef.update({ status: "approved", resolvedAt: FV.serverTimestamp() });
+    await db.collection("users").doc(uid).update({
+      balance: FV.increment(CFG.gmailPrice),
+      gmailSold: FV.increment(1),
+      totalEarn: FV.increment(CFG.gmailPrice),
+      history: FV.arrayUnion({
+        type: "Gmail অ্যাপ্রুভড", amount: CFG.gmailPrice,
+        time: new Date().toLocaleString("bn-BD"), sign: "+"
+      })
+    });
+    toast("✅ অ্যাপ্রুভ (+" + CFG.gmailPrice + " ৳)", "success");
+    renderAdmin(); renderMySubs();
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+async function aReject(subId, uid) {
+  vv();
+  if (!confirm("রিজেক্ট করবেন?")) return;
+  try {
+    await db.collection("submissions").doc(subId).update({
+      status: "rejected", resolvedAt: FV.serverTimestamp()
+    });
+    toast("❌ রিজেক্টেড", "info");
+    renderAdmin(); renderMySubs();
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+async function aSearch() {
+  vv();
+  const uid = $("aUid").value.trim();
+  if (!uid) return toast("UID দিন", "error");
+  try {
+    const snap = await db.collection("users").doc(uid).get();
+    const el = $("aInfo");
+    if (!snap.exists) {
+      el.innerHTML = `<div class="uic" style="color:var(--danger)">❌ UID "${esc(uid)}" পাওয়া যায়নি</div>`;
+      $("aCtrl").style.display = "none"; aUid = null;
+      return;
+    }
+    const u = snap.data();
+    aUid = uid;
+    el.innerHTML = `<div class="uic">
+      <div>👤 নাম: <b>${esc(u.name || "-")}</b></div>
+      <div>🆔 UID: <b>${esc(uid)}</b></div>
+      <div>💰 ব্যালেন্স: <b>${fm(u.balance)} ৳</b></div>
+      <div>📧 বিক্রি Gmail: <b>${u.gmailSold || 0}</b></div>
+      <div>👥 রেফারেল: <b>${u.referrals || 0}</b></div>
+      <div>💵 মোট আয়: <b>${fm(u.totalEarn)} ৳</b></div>
+      <div>🚦 স্ট্যাটাস: <b style="color:${u.blocked ? 'var(--danger)' : 'var(--success)'}">${u.blocked ? "ব্লকড" : "একটিভ"}</b></div>
+    </div>`;
+    $("aCtrl").style.display = "block";
+    $("aBlockBtn").textContent = u.blocked ? "✅ আনব্লক" : "🚫 ব্লক";
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+async function aAdj(sign) {
+  vv();
+  if (!aUid) return toast("আগে UID সার্চ করুন", "error");
+  const amt = parseFloat($("aAmt").value);
+  if (!amt || amt <= 0) return toast("সঠিক অ্যামাউন্ট দিন", "error");
+  try {
+    const ref = db.collection("users").doc(aUid);
+    const snap = await ref.get();
+    if (!snap.exists) return toast("ইউজার নেই", "error");
+    const bal = snap.data().balance || 0;
+    if (sign < 0 && bal < amt) return toast("ব্যালেন্স কম", "error");
+
+    const upd = {
+      balance: FV.increment(sign * amt),
+      history: FV.arrayUnion({
+        type: sign > 0 ? "অ্যাডমিন বোনাস" : "অ্যাডমিন ডিডাকশন",
+        amount: amt, time: new Date().toLocaleString("bn-BD"),
+        sign: sign > 0 ? "+" : "-"
+      })
+    };
+    if (sign > 0) upd.totalEarn = FV.increment(amt);
+    await ref.update(upd);
+    $("aAmt").value = "";
+    toast(sign > 0 ? "✅ যোগ হয়েছে" : "✅ কমানো হয়েছে", "success");
+    aSearch();
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+async function aBlock() {
+  vv();
+  if (!aUid) return toast("UID সার্চ করুন", "error");
+  try {
+    const ref = db.collection("users").doc(aUid);
+    const snap = await ref.get();
+    const cur = !!snap.data()?.blocked;
+    await ref.update({ blocked: !cur });
+    toast(!cur ? "🚫 ব্লকড" : "✅ আনব্লকড", !cur ? "error" : "success");
+    aSearch();
+  } catch (e) { toast("সমস্যা: " + e.message, "error"); }
+}
+
+/* ============ SETTINGS ============ */
+function theme(apply = true) {
+  if (apply) vv();
+  if (apply) {
+    const light = document.documentElement.getAttribute("data-theme") === "light";
+    if (light) { document.documentElement.removeAttribute("data-theme"); $("tgt").classList.add("on"); localStorage.setItem("theme", "dark"); }
+    else { document.documentElement.setAttribute("data-theme", "light"); $("tgt").classList.remove("on"); localStorage.setItem("theme", "light"); }
+  } else {
+    const t = localStorage.getItem("theme") || "dark";
+    if (t === "light") { document.documentElement.setAttribute("data-theme", "light"); $("tgt").classList.remove("on"); }
+    vibOn = localStorage.getItem("vib") !== "0";
+    $("vbt").classList.toggle("on", vibOn);
+    if ("Notification" in window && Notification.permission === "granted") $("ntgt").classList.add("on");
+  }
+}
+
+function vib() {
+  vibOn = !vibOn;
+  $("vbt").classList.toggle("on", vibOn);
+  localStorage.setItem("vib", vibOn ? "1" : "0");
+  if (vibOn) vv();
+}
+
+function support() {
+  vv();
+  const u = CFG.botLink;
+  if (tg) tg.openTelegramLink(u); else window.open(u, "_blank");
+}
+
+/* ============ MODAL ============ */
+function openM(id) { vv(); $(id).classList.add("show"); }
+function closeM(id) { $(id).classList.remove("show"); }
+document.querySelectorAll(".mo").forEach(o => o.addEventListener("click", e => { if (e.target === o) o.classList.remove("show"); }));
+</script>
+</body>
+</html>
